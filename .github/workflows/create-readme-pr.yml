@@ -1,0 +1,85 @@
+# .github/workflows/create-readme-pr.yml
+# Trigger: comment "/create-pr" on issue #2 by user rkoziel
+name: Create OctoAcme README PR
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create_pr:
+    # Only run when comment is exactly "/create-pr" on issue #2 by user rkoziel
+    if: >
+      github.event.comment.body == '/create-pr' &&
+      github.event.issue.number == 2 &&
+      github.event.comment.user.login == 'rkoziel'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create docs/README.md
+        run: |
+          mkdir -p docs
+          cat > docs/README.md <<'EOF'
+# OctoAcme Project Management Docs
+
+This README is the central index and quick reference for OctoAcme's project management process documentation. It provides a concise overview of how OctoAcme runs projects, names key roles and workflows, and links to the full process documents in this repository's docs/ folder so contributors and stakeholders can quickly find the guidance they need.
+
+OctoAcme runs projects through a lightweight, iterative lifecycle that moves from initiation to planning, execution, release, and retrospective. Initiation captures the problem, success metrics, stakeholders, and a one‑pager used for go/no‑go decisions. Planning turns an approved initiative into a prioritized backlog, estimates, a Definition of Done, a release plan, and an initial risk register so teams keep scope and outcomes explicit and manageable.
+
+Day-to-day execution is organized around a visible project board (Backlog → Ready → In Progress → In Review → QA → Done), small pull requests, acceptance criteria on issues and PRs, and CI gates. Teams rely on automated tests and linting, require at least one code review approval before merging, and measure velocity and burndown. Blockers are triaged at standups and escalated through defined paths so progress and health are continuously observable and actionable.
+
+Roles and communication are explicit: Project Managers (PMs) coordinate delivery, schedules, risks, and status; Product Managers (PdMs) own outcomes and prioritization; Developers implement features and maintain tests; QA validates acceptance criteria and runs required checks. Communication cadence includes daily standups, weekly delivery syncs, demos at milestones, and monthly stakeholder updates. Quality assurance is enforced through unit and integration tests, security scanning in CI, pre-release smoke tests, a release checklist with rollback plans, and post-deploy verification. Retrospectives capture learnings and convert them into tracked action items for continuous improvement.
+
+Process documentation (full docs)
+- [Project Management Overview](docs/octoacme-project-management-overview.md)
+- [Project Initiation Guide](docs/octoacme-project-initiation.md)
+- [Project Planning](docs/octoacme-project-planning.md)
+- [Execution & Tracking](docs/octoacme-execution-and-tracking.md)
+- [Risk Management & Communication](docs/octoacme-risks-and-communication.md)
+- [Release & Deployment Guide](docs/octoacme-release-and-deployment.md)
+- [Retrospective & Continuous Improvement](docs/octoacme-retrospective-and-continuous-improvement.md)
+- [Roles & Personas](docs/octoacme-roles-and-personas.md)
+
+How to use this index
+- Keep this README updated as the single discoverable entry point for project process docs in this repo.
+- Use the linked process docs for templates, checklists, and role guidance.
+- When proposing updates, file an issue using the "Add Content to Project Management Process Docs" template and reference the relevant document(s) — see issue #2 for this change request.
+
+Contributing
+- Propose edits via a pull request that adds or modifies files in docs/.
+- Link the pull request to issue #2 (or a relevant issue) and request reviews from project leads (request @rkoziel as a reviewer for this change).
+- Keep changes small and self-contained (one change per PR) so reviews are fast and clear.
+EOF
+
+      - name: Create branch and commit README
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="add/docs-octoacme-readme"
+          git checkout -b "$branch"
+          git add docs/README.md
+          git commit -m "docs: add OctoAcme project management README to docs/"
+          git push --set-upstream origin "$branch"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "docs: add OctoAcme project management README to docs/"
+          branch: add/docs-octoacme-readme
+          title: '[Docs] Add OctoAcme Project Management README (index + overview)'
+          body: |
+            This PR adds a central README in docs/ that summarizes OctoAcme project management processes and links to all process documents.
+
+            Linked issue: #2
+
+            Requesting reviewer: @rkoziel
+          reviewers: rkoziel
+          labels: documentation, process improvement
